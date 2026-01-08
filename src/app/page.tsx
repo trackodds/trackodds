@@ -1,5 +1,5 @@
 import { Header, RaceHeader, OddsTable, SharpAlerts } from '@/components';
-import { getDrivers } from '@/lib/data';
+import { getCurrentOddsWithDrivers } from '@/lib/data';
 
 // =============================================================================
 // HOME PAGE
@@ -9,21 +9,16 @@ import { getDrivers } from '@/lib/data';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Fetch drivers from database
-  const drivers = await getDrivers();
-
- // Transform drivers into odds format (no real odds yet, just driver list)
-  const driverOdds = drivers.map((driver: any) => ({
-    driverId: driver.id,
-    driverName: driver.name,
-    driverNumber: driver.number,
-    team: driver.team,
-    manufacturer: driver.manufacturer,
-    odds: {} as Record<string, number>,
-    bestOdds: 0,
-    bestBook: 'draftkings' as const,
-    movement24h: undefined,
-  }));
+  // Fetch odds from database
+  const driverOdds = await getCurrentOddsWithDrivers('daytona-500-2026');
+  
+  // Sort by best odds (favorites first), then by name
+  const sortedOdds = [...driverOdds].sort((a, b) => {
+    if (a.bestOdds === 0 && b.bestOdds === 0) return a.driverName.localeCompare(b.driverName);
+    if (a.bestOdds === 0) return 1;
+    if (b.bestOdds === 0) return -1;
+    return a.bestOdds - b.bestOdds;
+  });
 
   // Mock race data for now (we'll pull from DB later)
   const upcomingRace = {
@@ -62,23 +57,32 @@ export default async function HomePage() {
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Odds Table - Main content */}
           <div className="xl:col-span-3">
-            <OddsTable odds={driverOdds} market="Race Winner" />
+            <OddsTable odds={sortedOdds} market="Race Winner" />
           </div>
           
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Driver Count Card */}
+            {/* Database Status Card */}
             <div className="card p-4 sm:p-5">
               <h3 className="font-display text-sm font-semibold text-track-300 uppercase tracking-wider mb-3">
                 Database Status
               </h3>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-3 h-3 rounded-full bg-accent-green animate-pulse"></div>
+                <span className="text-track-100">{sortedOdds.length} drivers loaded</span>
+              </div>
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-accent-green animate-pulse"></div>
-                <span className="text-track-100">{drivers.length} drivers loaded</span>
+                <span className="text-track-100">
+                  {sortedOdds.filter(d => d.bestOdds > 0).length} with odds
+                </span>
               </div>
-              <p className="text-xs text-track-400 mt-2">
-                Live from Supabase ✓
-              </p>
+              <a 
+                href="/admin" 
+                className="block mt-4 text-xs text-accent-green hover:underline"
+              >
+                Admin Panel →
+              </a>
             </div>
 
             {/* Quick Stats Card */}

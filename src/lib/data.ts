@@ -142,7 +142,7 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
       manufacturer: driver.manufacturer,
       odds: driverOdds,
       bestOdds,
-      bestBook,
+      bestBook: (bestBook || 'draftkings') as 'draftkings' | 'fanduel' | 'betmgm' | 'caesars' | 'betrivers' | 'pointsbet',
     };
   });
 }
