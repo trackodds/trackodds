@@ -1,18 +1,18 @@
-import { Header, RaceHeader, OddsTable, SharpAlerts } from '@/components';
+import { Header, RaceHero, OddsTable } from '@/components';
 import { getCurrentOddsWithDrivers } from '@/lib/data';
+import { Trophy, TrendingUp, Clock, Zap } from 'lucide-react';
 
 // =============================================================================
-// HOME PAGE
+// HOME PAGE - V2 REDESIGN
 // =============================================================================
 
-// Force dynamic rendering (not static)
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   // Fetch odds from database
   const driverOdds = await getCurrentOddsWithDrivers('daytona-500-2026');
   
-  // Sort by best odds (favorites first), then by name
+  // Sort by best odds (favorites first)
   const sortedOdds = [...driverOdds].sort((a, b) => {
     if (a.bestOdds === 0 && b.bestOdds === 0) return a.driverName.localeCompare(b.driverName);
     if (a.bestOdds === 0) return 1;
@@ -20,7 +20,10 @@ export default async function HomePage() {
     return a.bestOdds - b.bestOdds;
   });
 
-  // Mock race data for now (we'll pull from DB later)
+  // Get top 3 favorites for featured section
+  const favorites = sortedOdds.filter(d => d.bestOdds > 0).slice(0, 3);
+
+  // Race data
   const upcomingRace = {
     id: 'daytona-500-2026',
     name: 'Daytona 500',
@@ -46,54 +49,42 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-track-900">
+    <div className="min-h-screen bg-void-900">
       <Header />
       
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-        {/* Race Header */}
-        <RaceHeader race={upcomingRace} />
-        
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          {/* Odds Table - Main content */}
-          <div className="xl:col-span-3">
-            <OddsTable odds={sortedOdds} market="Race Winner" />
-          </div>
+      {/* Hero Section */}
+      <RaceHero race={upcomingRace} />
+      
+      {/* Main Content */}
+      <main className="relative z-10 -mt-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
           
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Database Status Card */}
-            <div className="card p-4 sm:p-5">
-              <h3 className="font-display text-sm font-semibold text-track-300 uppercase tracking-wider mb-3">
-                Database Status
-              </h3>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-3 h-3 rounded-full bg-accent-green animate-pulse"></div>
-                <span className="text-track-100">{sortedOdds.length} drivers loaded</span>
+          {/* Featured Favorites - Visual highlight */}
+          {favorites.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-flame-500" />
+                <h2 className="font-display text-lg font-semibold text-cream-100">
+                  Current Favorites
+                </h2>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-accent-green animate-pulse"></div>
-                <span className="text-track-100">
-                  {sortedOdds.filter(d => d.bestOdds > 0).length} with odds
-                </span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {favorites.map((driver, index) => (
+                  <FavoriteCard key={driver.driverId} driver={driver} rank={index + 1} />
+                ))}
               </div>
-              <a 
-                href="/admin" 
-                className="block mt-4 text-xs text-accent-green hover:underline"
-              >
-                Admin Panel →
-              </a>
-            </div>
+            </section>
+          )}
 
-            {/* Quick Stats Card */}
-            <QuickStatsCard />
-            
-            {/* About Card */}
-            <AboutCard />
-          </div>
+          {/* Main Odds Table */}
+          <section>
+            <OddsTable odds={sortedOdds} market="Race Winner" />
+          </section>
+          
         </div>
       </main>
-      
+
       {/* Footer */}
       <Footer />
     </div>
@@ -101,54 +92,58 @@ export default async function HomePage() {
 }
 
 // =============================================================================
-// QUICK STATS CARD
+// FAVORITE CARD - Featured drivers with visual impact
 // =============================================================================
 
-function QuickStatsCard() {
+function FavoriteCard({ driver, rank }: { driver: any; rank: number }) {
+  const formatOdds = (odds: number) => (odds > 0 ? `+${odds}` : odds.toString());
+  
   return (
-    <div className="card p-4 sm:p-5">
-      <h3 className="font-display text-sm font-semibold text-track-300 uppercase tracking-wider mb-4">
-        Daytona 500 Quick Facts
-      </h3>
-      <div className="space-y-3">
-        <StatRow label="Distance" value="500 miles" />
-        <StatRow label="Laps" value="200" />
-        <StatRow label="Track Length" value="2.5 miles" />
-        <StatRow label="Track Type" value="Superspeedway" />
-        <StatRow label="2025 Winner" value="Kyle Larson" />
-        <StatRow label="Most Wins (Active)" value="Denny Hamlin (4)" />
+    <div className="card-interactive p-5 group">
+      <div className="flex items-start justify-between mb-4">
+        {/* Rank badge */}
+        <div className="flex items-center gap-2">
+          <span className={`
+            w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm
+            ${rank === 1 ? 'bg-gradient-to-br from-flame-500 to-race-500 text-white' : 
+              rank === 2 ? 'bg-void-600 text-cream-200' : 
+              'bg-void-700 text-cream-300'}
+          `}>
+            {rank}
+          </span>
+          <span className="text-xs text-cream-500 uppercase tracking-wider">
+            {rank === 1 ? 'Favorite' : rank === 2 ? '2nd Choice' : '3rd Choice'}
+          </span>
+        </div>
+        
+        {/* Driver number */}
+        <div className="driver-number-featured text-lg">
+          {driver.driverNumber}
+        </div>
       </div>
-    </div>
-  );
-}
 
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-track-400">{label}</span>
-      <span className="text-track-100 font-medium">{value}</span>
-    </div>
-  );
-}
-
-// =============================================================================
-// ABOUT CARD
-// =============================================================================
-
-function AboutCard() {
-  return (
-    <div className="card p-4 sm:p-5">
-      <h3 className="font-display text-sm font-semibold text-track-300 uppercase tracking-wider mb-3">
-        About TrackOdds
+      {/* Driver name */}
+      <h3 className="font-display text-xl font-bold text-cream-50 mb-1 group-hover:text-flame-400 transition-colors">
+        {driver.driverName}
       </h3>
-      <p className="text-sm text-track-400 leading-relaxed">
-        TrackOdds compares NASCAR betting odds across all major sportsbooks in real-time. 
-        Find the best lines, track sharp money movements, and make informed betting decisions.
+      <p className="text-sm text-cream-400 mb-4">
+        {driver.team}
       </p>
-      <div className="mt-4 pt-4 border-t border-track-600">
-        <p className="text-xs text-track-500">
-          Odds updated every 15 minutes. Must be 21+ to bet. Please gamble responsibly.
-        </p>
+
+      {/* Best odds */}
+      <div className="flex items-end justify-between pt-4 border-t border-void-700/50">
+        <div>
+          <div className="text-xs text-cream-500 mb-1">Best Available</div>
+          <div className="font-mono text-2xl font-bold text-mint-500">
+            {formatOdds(driver.bestOdds)}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-cream-500 mb-1">Win Probability</div>
+          <div className="text-lg font-semibold text-cream-200">
+            {(100 / (driver.bestOdds / 100 + 1)).toFixed(1)}%
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -160,25 +155,31 @@ function AboutCard() {
 
 function Footer() {
   return (
-    <footer className="border-t border-track-600 bg-track-800/50 mt-12">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold text-track-300">
-              Track<span className="text-accent-green">Odds</span>
+    <footer className="border-t border-void-700/50 bg-void-950">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-flame-500 to-race-500 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-display text-lg font-bold text-cream-200">
+              TRACK<span className="text-flame-500">ODDS</span>
             </span>
-            <span className="text-xs text-track-500">© 2026</span>
           </div>
-          
-          <div className="flex items-center gap-6 text-sm text-track-400">
-            <a href="#" className="hover:text-track-200 transition-colors">About</a>
-            <a href="#" className="hover:text-track-200 transition-colors">Contact</a>
-            <a href="#" className="hover:text-track-200 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-track-200 transition-colors">Terms</a>
+
+          {/* Links */}
+          <div className="flex items-center gap-8 text-sm">
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">About</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Contact</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Privacy</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Terms</a>
           </div>
-          
-          <div className="text-xs text-track-500">
-            21+ | Gambling Problem? Call 1-800-GAMBLER
+
+          {/* Responsible gambling */}
+          <div className="text-xs text-cream-500 text-center md:text-right">
+            <p>21+ | Gambling Problem? Call 1-800-GAMBLER</p>
+            <p className="mt-1">Odds for informational purposes only.</p>
           </div>
         </div>
       </div>

@@ -1,8 +1,7 @@
 // =============================================================================
-// TRACKODDS.IO - COMPONENT EXPORTS
+// TRACKODDS V2 - COMPONENT EXPORTS
 // =============================================================================
 
 export { Header } from './Header';
-export { RaceHeader } from './RaceHeader';
+export { RaceHero } from './RaceHero';
 export { OddsTable } from './OddsTable';
-export { SharpAlerts, SteamMove } from './SharpAlerts';

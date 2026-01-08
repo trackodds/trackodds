@@ -9,80 +9,118 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Core brand colors - inspired by racing, but sophisticated
-        track: {
-          900: '#0a0a0f',    // Deepest black - main background
-          800: '#12121a',    // Card backgrounds
-          700: '#1a1a25',    // Elevated surfaces
-          600: '#252530',    // Borders, dividers
-          500: '#3a3a4a',    // Muted text
-          400: '#6a6a7a',    // Secondary text
-          300: '#9a9aaa',    // Tertiary text
-          200: '#cacada',    // Primary text
-          100: '#eaeafa',    // Bright text
-          50: '#ffffff',     // Pure white
+        // Deep, rich darks - not pure black
+        void: {
+          950: '#0a0908',    // Deepest - almost black with warmth
+          900: '#0f0d0b',    // Main background
+          850: '#141210',    // Slightly elevated
+          800: '#1a1714',    // Cards
+          700: '#252019',    // Borders, elevated
+          600: '#332b22',    // Muted elements
+          500: '#4a3f32',    // Disabled states
         },
-        // Accent colors for data visualization and CTAs
-        accent: {
-          green: '#22c55e',   // Positive movement, best odds
-          red: '#ef4444',     // Negative movement
-          yellow: '#eab308',  // Warnings, neutral
-          blue: '#3b82f6',    // Links, interactive
-          purple: '#8b5cf6',  // Featured, premium
-          orange: '#f97316',  // Hot/trending
+        // Cream/warm whites for text
+        cream: {
+          50: '#fefdfb',     // Pure cream white
+          100: '#faf8f5',    // Primary text
+          200: '#f0ebe3',    // Secondary text
+          300: '#d9d0c3',    // Muted text
+          400: '#b8a994',    // Very muted
+          500: '#8c7a63',    // Disabled text
         },
-        // Sportsbook brand colors for recognition
+        // Signature orange-red - the soul of the brand
+        flame: {
+          300: '#ffb088',    // Light - highlights
+          400: '#ff8a5c',    // Hover states
+          500: '#ff6b35',    // PRIMARY - main accent
+          600: '#e85a2a',    // Active states
+          700: '#c44a22',    // Dark variant
+        },
+        // Racing red for contrast moments
+        race: {
+          400: '#ff5555',
+          500: '#e63946',    // Secondary accent
+          600: '#c1121f',
+        },
+        // Success green for best odds
+        mint: {
+          400: '#6ee7b7',
+          500: '#34d399',
+          600: '#10b981',
+        },
+        // Sportsbook brand colors
         book: {
           draftkings: '#53d337',
           fanduel: '#1493ff',
-          betmgm: '#c4a962',
-          caesars: '#0a3d2a',
-          betrivers: '#ff6b35',
-          pointsbet: '#ed1c24',
+          betmgm: '#b8860b',
+          caesars: '#00843d',
+          betrivers: '#1a73e8',
+          pointsbet: '#f94f6d',
         },
       },
       fontFamily: {
-        // Sharp, modern display font for headers
+        // Sharp, modern display font
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
-        // Clean, readable body font
+        // Clean body font
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
-        // Monospace for odds/numbers
-        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+        // Monospace for odds
+        mono: ['var(--font-mono)', 'monospace'],
       },
       fontSize: {
-        // Custom scale optimized for data density
-        'odds': ['1.125rem', { lineHeight: '1.25', fontWeight: '600' }],
-        'odds-sm': ['0.9375rem', { lineHeight: '1.25', fontWeight: '600' }],
+        'display-xl': ['4rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '800' }],
+        'display-lg': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-md': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'odds-lg': ['1.5rem', { lineHeight: '1', fontWeight: '700' }],
+        'odds-md': ['1.125rem', { lineHeight: '1', fontWeight: '600' }],
+        'odds-sm': ['0.875rem', { lineHeight: '1', fontWeight: '600' }],
+      },
+      backgroundImage: {
+        // Gradient meshes for depth
+        'mesh-1': 'radial-gradient(at 40% 20%, rgba(255, 107, 53, 0.15) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(230, 57, 70, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(255, 138, 92, 0.1) 0px, transparent 50%)',
+        'mesh-2': 'radial-gradient(at 100% 100%, rgba(255, 107, 53, 0.1) 0px, transparent 40%), radial-gradient(at 0% 0%, rgba(230, 57, 70, 0.05) 0px, transparent 50%)',
+        // Carbon fiber texture
+        'carbon': `url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M5 0h1L0 5v1zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E")`,
+        // Noise texture
+        'noise': `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
+      },
+      boxShadow: {
+        'glow-flame': '0 0 30px -5px rgba(255, 107, 53, 0.3)',
+        'glow-flame-lg': '0 0 60px -10px rgba(255, 107, 53, 0.4)',
+        'inner-light': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
         'slide-up': 'slideUp 0.4s ease-out',
-        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
-        'glow': 'glow 2s ease-in-out infinite',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'number-tick': 'numberTick 0.3s ease-out',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+        glow: {
+          '0%': { boxShadow: '0 0 20px -5px rgba(255, 107, 53, 0.2)' },
+          '100%': { boxShadow: '0 0 30px -5px rgba(255, 107, 53, 0.4)' },
         },
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        pulseSubtle: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
+        slideIn: {
+          '0%': { opacity: '0', transform: 'translateX(-10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
-        glow: {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(34, 197, 94, 0.5)' },
-          '50%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.8)' },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        numberTick: {
+          '0%': { transform: 'translateY(-100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
       },
-      backgroundImage: {
-        // Subtle gradient overlays
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-track': 'linear-gradient(135deg, #12121a 0%, #0a0a0f 100%)',
-        'grid-pattern': `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a1a25' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      borderRadius: {
+        '4xl': '2rem',
       },
     },
   },

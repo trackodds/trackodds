@@ -1,195 +1,105 @@
-'use client';
+import { Header, RaceHero, OddsTable } from '@/components';
+import { getCurrentOddsWithDrivers } from '@/lib/data';
+import { Zap } from 'lucide-react';
 
-import { useState } from 'react';
+// =============================================================================
+// HOME PAGE - V2
+// =============================================================================
 
-// Simple password protection (not secure for production, but fine for now)
-const ADMIN_PASSWORD = 'trackodds2026';
+export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default async function HomePage() {
+  // Fetch odds from database
+  const driverOdds = await getCurrentOddsWithDrivers('daytona-500-2026');
+  
+  // Sort by best odds (favorites first)
+  const sortedOdds = [...driverOdds].sort((a, b) => {
+    if (a.bestOdds === 0 && b.bestOdds === 0) return a.driverName.localeCompare(b.driverName);
+    if (a.bestOdds === 0) return 1;
+    if (b.bestOdds === 0) return -1;
+    return a.bestOdds - b.bestOdds;
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('Wrong password');
-    }
+  // Race data
+  const upcomingRace = {
+    id: 'daytona-500-2026',
+    name: 'Daytona 500',
+    track: {
+      id: 'daytona',
+      name: 'Daytona International Speedway',
+      shortName: 'Daytona',
+      location: 'Daytona Beach, FL',
+      type: 'superspeedway' as const,
+      length: 2.5,
+      shape: 'tri-oval' as const,
+      surface: 'Asphalt' as const,
+    },
+    series: 'Cup' as const,
+    scheduledDate: new Date('2026-02-15T14:30:00-05:00'),
+    scheduledTime: '2:30 PM ET',
+    tvNetwork: 'FOX',
+    laps: 200,
+    distance: 500,
+    stage1Laps: 65,
+    stage2Laps: 65,
+    status: 'scheduled' as const,
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-track-900 flex items-center justify-center p-4">
-        <div className="card p-8 w-full max-w-md">
-          <h1 className="font-display text-2xl font-bold text-track-50 mb-6 text-center">
-            TrackOdds Admin
-          </h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-track-300 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="Enter admin password"
-              />
-            </div>
-            {error && (
-              <p className="text-accent-red text-sm">{error}</p>
-            )}
-            <button type="submit" className="btn-primary w-full">
-              Login
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-track-900 p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-3xl font-bold text-track-50">
-            TrackOdds Admin
-          </h1>
-          <a href="/" className="btn-secondary">
-            ← Back to Site
-          </a>
+    <div className="min-h-screen bg-void-900">
+      <Header />
+      
+      {/* Hero Section */}
+      <RaceHero race={upcomingRace} />
+      
+      {/* Main Content */}
+      <main className="relative z-10 -mt-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
+          {/* Main Odds Table */}
+          <OddsTable odds={sortedOdds} market="Race Winner" />
         </div>
+      </main>
 
-        {/* Quick Guide */}
-        <div className="card p-6 mb-8">
-          <h2 className="font-display text-xl font-bold text-track-50 mb-4">
-            📝 How to Update Odds
-          </h2>
-          <div className="space-y-3 text-track-300">
-            <p>
-              <strong className="text-track-100">1. Go to Supabase:</strong>{' '}
-              <a 
-                href="https://supabase.com/dashboard" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-accent-green hover:underline"
-              >
-                supabase.com/dashboard
-              </a>
-            </p>
-            <p>
-              <strong className="text-track-100">2. Click "Table Editor"</strong> in the left sidebar
-            </p>
-            <p>
-              <strong className="text-track-100">3. Click "odds"</strong> table
-            </p>
-            <p>
-              <strong className="text-track-100">4. Click "Insert" → "Insert Row"</strong> to add new odds
-            </p>
-            <p>
-              <strong className="text-track-100">5. Fill in:</strong>
-            </p>
-            <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
-              <li><code className="bg-track-700 px-1 rounded">driver_id</code> - e.g., "kyle-larson"</li>
-              <li><code className="bg-track-700 px-1 rounded">race_id</code> - "daytona-500-2026"</li>
-              <li><code className="bg-track-700 px-1 rounded">sportsbook</code> - "draftkings", "fanduel", or "betmgm"</li>
-              <li><code className="bg-track-700 px-1 rounded">market</code> - "race_winner"</li>
-              <li><code className="bg-track-700 px-1 rounded">odds</code> - The American odds number (e.g., 800 for +800)</li>
-            </ul>
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
+}
+
+// =============================================================================
+// FOOTER
+// =============================================================================
+
+function Footer() {
+  return (
+    <footer className="border-t border-void-700/50 bg-void-950">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-flame-500 to-race-500 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-display text-lg font-bold text-cream-200">
+              TRACK<span className="text-flame-500">ODDS</span>
+            </span>
           </div>
-        </div>
 
-        {/* Driver IDs Reference */}
-        <div className="card p-6 mb-8">
-          <h2 className="font-display text-xl font-bold text-track-50 mb-4">
-            🏎️ Driver IDs Reference
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
-            {[
-              'kyle-larson',
-              'chase-elliott', 
-              'william-byron',
-              'alex-bowman',
-              'denny-hamlin',
-              'christopher-bell',
-              'ty-gibbs',
-              'chase-briscoe',
-              'joey-logano',
-              'ryan-blaney',
-              'austin-cindric',
-              'ross-chastain',
-              'connor-zilisch',
-              'shane-van-gisbergen',
-              'bubba-wallace',
-              'tyler-reddick',
-              'kyle-busch',
-              'austin-dillon',
-              'brad-keselowski',
-              'chris-buescher',
-              'ryan-preece',
-              'cole-custer',
-              'daniel-suarez',
-              'carson-hocevar',
-              'erik-jones',
-              'john-hunter-nemechek',
-              'michael-mcdowell',
-              'todd-gilliland',
-              'zane-smith',
-              'josh-berry',
-              'ricky-stenhouse-jr',
-              'ty-dillon',
-              'aj-allmendinger',
-              'cody-ware',
-            ].map((id) => (
-              <code key={id} className="bg-track-700 px-2 py-1 rounded text-track-200">
-                {id}
-              </code>
-            ))}
+          {/* Links */}
+          <div className="flex items-center gap-8 text-sm">
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">About</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Contact</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Privacy</a>
+            <a href="#" className="text-cream-400 hover:text-cream-100 transition-colors">Terms</a>
           </div>
-        </div>
 
-        {/* Quick SQL Templates */}
-        <div className="card p-6">
-          <h2 className="font-display text-xl font-bold text-track-50 mb-4">
-            ⚡ Quick SQL Templates
-          </h2>
-          <p className="text-track-400 text-sm mb-4">
-            Copy these to Supabase SQL Editor to bulk update odds:
-          </p>
-          
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-track-200 font-semibold mb-2">Add single odds:</h3>
-              <pre className="bg-track-700 p-3 rounded text-xs text-track-300 overflow-x-auto">
-{`INSERT INTO odds (driver_id, race_id, sportsbook, market, odds)
-VALUES ('kyle-larson', 'daytona-500-2026', 'draftkings', 'race_winner', 800);`}
-              </pre>
-            </div>
-            
-            <div>
-              <h3 className="text-track-200 font-semibold mb-2">Update existing odds:</h3>
-              <pre className="bg-track-700 p-3 rounded text-xs text-track-300 overflow-x-auto">
-{`UPDATE odds 
-SET odds = 750 
-WHERE driver_id = 'kyle-larson' 
-  AND sportsbook = 'draftkings'
-  AND race_id = 'daytona-500-2026';`}
-              </pre>
-            </div>
-
-            <div>
-              <h3 className="text-track-200 font-semibold mb-2">Delete old odds:</h3>
-              <pre className="bg-track-700 p-3 rounded text-xs text-track-300 overflow-x-auto">
-{`DELETE FROM odds WHERE race_id = 'daytona-500-2026';`}
-              </pre>
-            </div>
+          {/* Responsible gambling */}
+          <div className="text-xs text-cream-500 text-center md:text-right">
+            <p>21+ | Gambling Problem? Call 1-800-GAMBLER</p>
+            <p className="mt-1">Odds for informational purposes only.</p>
           </div>
         </div>
       </div>
-    </div>
+    </footer>
   );
 }
