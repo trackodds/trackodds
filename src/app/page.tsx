@@ -1,14 +1,54 @@
 import { Header, RaceHeader, OddsTable, SharpAlerts } from '@/components';
-import { races2025 } from '@/data/nascar';
-import { sortedOdds } from '@/data/mock-odds';
+import { getDrivers } from '@/lib/data';
 
 // =============================================================================
 // HOME PAGE
 // =============================================================================
 
-export default function HomePage() {
-  // Get the upcoming race (Daytona 500)
-  const upcomingRace = races2025[0];
+// Force dynamic rendering (not static)
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  // Fetch drivers from database
+  const drivers = await getDrivers();
+
+ // Transform drivers into odds format (no real odds yet, just driver list)
+  const driverOdds = drivers.map((driver: any) => ({
+    driverId: driver.id,
+    driverName: driver.name,
+    driverNumber: driver.number,
+    team: driver.team,
+    manufacturer: driver.manufacturer,
+    odds: {} as Record<string, number>,
+    bestOdds: 0,
+    bestBook: 'draftkings' as const,
+    movement24h: undefined,
+  }));
+
+  // Mock race data for now (we'll pull from DB later)
+  const upcomingRace = {
+    id: 'daytona-500-2026',
+    name: 'Daytona 500',
+    track: {
+      id: 'daytona',
+      name: 'Daytona International Speedway',
+      shortName: 'Daytona',
+      location: 'Daytona Beach, FL',
+      type: 'superspeedway' as const,
+      length: 2.5,
+      shape: 'tri-oval' as const,
+      surface: 'Asphalt' as const,
+    },
+    series: 'Cup' as const,
+    scheduledDate: new Date('2026-02-15T14:30:00-05:00'),
+    scheduledTime: '2:30 PM ET',
+    tvNetwork: 'FOX',
+    laps: 200,
+    distance: 500,
+    stage1Laps: 65,
+    stage2Laps: 65,
+    status: 'scheduled' as const,
+  };
 
   return (
     <div className="min-h-screen bg-track-900">
@@ -22,14 +62,25 @@ export default function HomePage() {
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Odds Table - Main content */}
           <div className="xl:col-span-3">
-            <OddsTable odds={sortedOdds} market="Race Winner" />
+            <OddsTable odds={driverOdds} market="Race Winner" />
           </div>
           
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Sharp Alerts */}
-            <SharpAlerts odds={sortedOdds} />
-            
+            {/* Driver Count Card */}
+            <div className="card p-4 sm:p-5">
+              <h3 className="font-display text-sm font-semibold text-track-300 uppercase tracking-wider mb-3">
+                Database Status
+              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-accent-green animate-pulse"></div>
+                <span className="text-track-100">{drivers.length} drivers loaded</span>
+              </div>
+              <p className="text-xs text-track-400 mt-2">
+                Live from Supabase ✓
+              </p>
+            </div>
+
             {/* Quick Stats Card */}
             <QuickStatsCard />
             
@@ -60,8 +111,8 @@ function QuickStatsCard() {
         <StatRow label="Laps" value="200" />
         <StatRow label="Track Length" value="2.5 miles" />
         <StatRow label="Track Type" value="Superspeedway" />
-        <StatRow label="2024 Winner" value="William Byron" />
-        <StatRow label="Most Wins (Active)" value="Denny Hamlin (3)" />
+        <StatRow label="2025 Winner" value="Kyle Larson" />
+        <StatRow label="Most Wins (Active)" value="Denny Hamlin (4)" />
       </div>
     </div>
   );
@@ -112,7 +163,7 @@ function Footer() {
             <span className="font-display text-lg font-bold text-track-300">
               Track<span className="text-accent-green">Odds</span>
             </span>
-            <span className="text-xs text-track-500">© 2025</span>
+            <span className="text-xs text-track-500">© 2026</span>
           </div>
           
           <div className="flex items-center gap-6 text-sm text-track-400">
