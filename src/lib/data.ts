@@ -226,6 +226,33 @@ export async function getDriverResults(driverId: string, driverName?: string): P
   return transformResults(data);
 }
 
+// Helper to normalize track type from database values to TrackType
+function normalizeTrackType(dbType: string | null | undefined): TrackType {
+  if (!dbType) return 'intermediate';
+
+  const normalized = dbType.toLowerCase().trim();
+
+  // Map various database values to our TrackType
+  if (normalized.includes('superspeedway') || normalized.includes('super speedway')) {
+    return 'superspeedway';
+  }
+  if (normalized.includes('intermediate')) {
+    return 'intermediate';
+  }
+  if (normalized.includes('short') || normalized === 'short track') {
+    return 'short';
+  }
+  if (normalized.includes('road') || normalized.includes('street')) {
+    return 'road';
+  }
+  if (normalized.includes('dirt')) {
+    return 'dirt';
+  }
+
+  // Default fallback
+  return 'intermediate';
+}
+
 // Helper to transform Supabase results to RaceResult format
 function transformResults(data: any[]): RaceResult[] {
   return data.map((result: any) => ({
@@ -235,7 +262,7 @@ function transformResults(data: any[]): RaceResult[] {
     raceName: result.race?.name || 'Unknown Race',
     trackId: result.race?.track?.id || '',
     trackName: result.race?.track?.name || 'Unknown Track',
-    trackType: (result.race?.track?.type || 'intermediate') as TrackType,
+    trackType: normalizeTrackType(result.race?.track?.type),
     date: new Date(result.race?.scheduled_date || Date.now()),
     year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
     startPos: result.start_pos,
@@ -262,7 +289,11 @@ export async function getTracks() {
     return [];
   }
 
-  return data || [];
+  // Normalize track types to match our TrackType values
+  return (data || []).map(track => ({
+    ...track,
+    type: normalizeTrackType(track.type),
+  }));
 }
 
 // =============================================================================
@@ -364,24 +395,7 @@ export async function getAllResults(): Promise<RaceResult[]> {
 
   if (!data) return [];
 
-  // Transform to RaceResult format
-  return data.map((result: any) => ({
-    id: result.id,
-    driverId: result.driver_id,
-    raceId: result.race_id,
-    raceName: result.race?.name || 'Unknown Race',
-    trackId: result.race?.track?.id || '',
-    trackName: result.race?.track?.name || 'Unknown Track',
-    trackType: (result.race?.track?.type || 'intermediate') as TrackType,
-    date: new Date(result.race?.scheduled_date || Date.now()),
-    year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
-    startPos: result.start_pos,
-    finishPos: result.finish_pos,
-    lapsLed: result.laps_led || 0,
-    lapsCompleted: result.laps_completed || 0,
-    driverRating: result.driver_rating || 0,
-    status: result.status || 'running',
-  }));
+  return transformResults(data);
 }
 
 // =============================================================================
