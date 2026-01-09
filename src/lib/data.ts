@@ -226,27 +226,72 @@ export async function getDriverResults(driverId: string, driverName?: string): P
   return transformResults(data);
 }
 
+// Known track classifications by name (fallback when type field is missing/wrong)
+const TRACK_TYPE_BY_NAME: Record<string, TrackType> = {
+  // Superspeedways
+  'daytona': 'superspeedway',
+  'talladega': 'superspeedway',
+  // Short tracks
+  'bristol': 'short',
+  'martinsville': 'short',
+  'richmond': 'short',
+  'north wilkesboro': 'short',
+  'new hampshire': 'short',
+  'phoenix': 'short',
+  'iowa': 'short',
+  // Road courses
+  'sonoma': 'road',
+  'watkins glen': 'road',
+  'road america': 'road',
+  'cota': 'road',
+  'circuit of the americas': 'road',
+  'chicago street': 'road',
+  'indianapolis road': 'road',
+  // Intermediates (explicit)
+  'atlanta': 'intermediate',
+  'charlotte': 'intermediate',
+  'las vegas': 'intermediate',
+  'texas': 'intermediate',
+  'kansas': 'intermediate',
+  'michigan': 'intermediate',
+  'homestead': 'intermediate',
+  'darlington': 'intermediate',
+  'nashville': 'intermediate',
+  'pocono': 'intermediate',
+  'gateway': 'intermediate',
+};
+
 // Helper to normalize track type from database values to TrackType
-function normalizeTrackType(dbType: string | null | undefined): TrackType {
-  if (!dbType) return 'intermediate';
+function normalizeTrackType(dbType: string | null | undefined, trackName?: string): TrackType {
+  // First try to match by type field
+  if (dbType) {
+    const normalized = dbType.toLowerCase().trim();
 
-  const normalized = dbType.toLowerCase().trim();
+    if (normalized.includes('superspeedway') || normalized.includes('super speedway')) {
+      return 'superspeedway';
+    }
+    if (normalized.includes('intermediate')) {
+      return 'intermediate';
+    }
+    if (normalized.includes('short') || normalized === 'short track') {
+      return 'short';
+    }
+    if (normalized.includes('road') || normalized.includes('street')) {
+      return 'road';
+    }
+    if (normalized.includes('dirt')) {
+      return 'dirt';
+    }
+  }
 
-  // Map various database values to our TrackType
-  if (normalized.includes('superspeedway') || normalized.includes('super speedway')) {
-    return 'superspeedway';
-  }
-  if (normalized.includes('intermediate')) {
-    return 'intermediate';
-  }
-  if (normalized.includes('short') || normalized === 'short track') {
-    return 'short';
-  }
-  if (normalized.includes('road') || normalized.includes('street')) {
-    return 'road';
-  }
-  if (normalized.includes('dirt')) {
-    return 'dirt';
+  // Fallback: try to determine type from track name
+  if (trackName) {
+    const normalizedName = trackName.toLowerCase();
+    for (const [key, type] of Object.entries(TRACK_TYPE_BY_NAME)) {
+      if (normalizedName.includes(key)) {
+        return type;
+      }
+    }
   }
 
   // Default fallback
@@ -255,23 +300,26 @@ function normalizeTrackType(dbType: string | null | undefined): TrackType {
 
 // Helper to transform Supabase results to RaceResult format
 function transformResults(data: any[]): RaceResult[] {
-  return data.map((result: any) => ({
-    id: result.id,
-    driverId: result.driver_id,
-    raceId: result.race_id,
-    raceName: result.race?.name || 'Unknown Race',
-    trackId: result.race?.track?.id || '',
-    trackName: result.race?.track?.name || 'Unknown Track',
-    trackType: normalizeTrackType(result.race?.track?.type),
-    date: new Date(result.race?.scheduled_date || Date.now()),
-    year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
-    startPos: result.start_pos,
-    finishPos: result.finish_pos,
-    lapsLed: result.laps_led || 0,
-    lapsCompleted: result.laps_completed || 0,
-    driverRating: result.driver_rating || 0,
-    status: result.status || 'running',
-  }));
+  return data.map((result: any) => {
+    const trackName = result.race?.track?.name || 'Unknown Track';
+    return {
+      id: result.id,
+      driverId: result.driver_id,
+      raceId: result.race_id,
+      raceName: result.race?.name || 'Unknown Race',
+      trackId: result.race?.track?.id || '',
+      trackName,
+      trackType: normalizeTrackType(result.race?.track?.type, trackName),
+      date: new Date(result.race?.scheduled_date || Date.now()),
+      year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
+      startPos: result.start_pos,
+      finishPos: result.finish_pos,
+      lapsLed: result.laps_led || 0,
+      lapsCompleted: result.laps_completed || 0,
+      driverRating: result.driver_rating || 0,
+      status: result.status || 'running',
+    };
+  });
 }
 
 // =============================================================================
@@ -289,10 +337,10 @@ export async function getTracks() {
     return [];
   }
 
-  // Normalize track types to match our TrackType values
+  // Normalize track types to match our TrackType values (using name as fallback)
   return (data || []).map(track => ({
     ...track,
-    type: normalizeTrackType(track.type),
+    type: normalizeTrackType(track.type, track.name),
   }));
 }
 
