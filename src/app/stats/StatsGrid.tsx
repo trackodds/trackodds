@@ -55,8 +55,8 @@ export function StatsGrid({
   defaultTrackId,
   defaultTrackName,
 }: StatsGridProps) {
-  // Filter state
-  const [selectedYears, setSelectedYears] = useState<number[]>(years.slice(0, 2));
+  // Filter state - default to all years to show full historical data
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedTrackType, setSelectedTrackType] = useState<TrackType | 'all'>(defaultTrackType);
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [raceRange, setRaceRange] = useState<number>(10);
