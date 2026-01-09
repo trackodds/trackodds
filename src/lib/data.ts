@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { RaceResult, AggregatedStats, TrackType } from '@/types';
 
 // =============================================================================
 // FETCH DRIVERS FROM DATABASE
@@ -149,4 +150,139 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
       bestBook: (bestBook || 'draftkings') as 'draftkings' | 'fanduel' | 'betmgm' | 'caesars' | 'betrivers' | 'pointsbet',
     };
   });
+}
+
+// =============================================================================
+// FETCH DRIVER RACE RESULTS
+// =============================================================================
+
+export async function getDriverResults(driverId: string): Promise<RaceResult[]> {
+  const { data, error } = await supabase
+    .from('results')
+    .select(`
+      *,
+      race:races(
+        id,
+        name,
+        scheduled_date,
+        track:tracks(
+          id,
+          name,
+          type
+        )
+      )
+    `)
+    .eq('driver_id', driverId)
+    .order('race(scheduled_date)', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching driver results:', error);
+    return [];
+  }
+
+  if (!data) return [];
+
+  // Transform to RaceResult format
+  return data.map((result: any) => ({
+    id: result.id,
+    driverId: result.driver_id,
+    raceId: result.race_id,
+    raceName: result.race?.name || 'Unknown Race',
+    trackId: result.race?.track?.id || '',
+    trackName: result.race?.track?.name || 'Unknown Track',
+    trackType: (result.race?.track?.type || 'intermediate') as TrackType,
+    date: new Date(result.race?.scheduled_date || Date.now()),
+    year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
+    startPos: result.start_pos,
+    finishPos: result.finish_pos,
+    lapsLed: result.laps_led || 0,
+    lapsCompleted: result.laps_completed || 0,
+    driverRating: result.driver_rating || 0,
+    status: result.status || 'running',
+  }));
+}
+
+// =============================================================================
+// FETCH AVAILABLE TRACKS
+// =============================================================================
+
+export async function getTracks() {
+  const { data, error } = await supabase
+    .from('tracks')
+    .select('id, name, type')
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching tracks:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// =============================================================================
+// FETCH AVAILABLE YEARS FROM RESULTS
+// =============================================================================
+
+export async function getResultYears(): Promise<number[]> {
+  const { data, error } = await supabase
+    .from('races')
+    .select('scheduled_date')
+    .order('scheduled_date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching years:', error);
+    return [2025, 2024];
+  }
+
+  if (!data) return [2025, 2024];
+
+  const years = new Set<number>();
+  for (const race of data) {
+    if (race.scheduled_date) {
+      years.add(new Date(race.scheduled_date).getFullYear());
+    }
+  }
+
+  return Array.from(years).sort((a, b) => b - a);
+}
+
+// =============================================================================
+// CALCULATE AGGREGATED STATS
+// =============================================================================
+
+export function calculateAggregatedStats(results: RaceResult[]): AggregatedStats {
+  if (results.length === 0) {
+    return {
+      avgFinish: 0,
+      avgStart: 0,
+      avgRating: 0,
+      avgLapsLed: 0,
+      winPct: 0,
+      top5Pct: 0,
+      top10Pct: 0,
+      races: 0,
+    };
+  }
+
+  const races = results.length;
+  const wins = results.filter(r => r.finishPos === 1).length;
+  const top5 = results.filter(r => r.finishPos <= 5).length;
+  const top10 = results.filter(r => r.finishPos <= 10).length;
+
+  const avgFinish = results.reduce((sum, r) => sum + r.finishPos, 0) / races;
+  const avgStart = results.reduce((sum, r) => sum + r.startPos, 0) / races;
+  const avgRating = results.reduce((sum, r) => sum + r.driverRating, 0) / races;
+  const avgLapsLed = results.reduce((sum, r) => sum + r.lapsLed, 0) / races;
+
+  return {
+    avgFinish: Math.round(avgFinish * 10) / 10,
+    avgStart: Math.round(avgStart * 10) / 10,
+    avgRating: Math.round(avgRating * 10) / 10,
+    avgLapsLed: Math.round(avgLapsLed * 10) / 10,
+    winPct: Math.round((wins / races) * 1000) / 10,
+    top5Pct: Math.round((top5 / races) * 1000) / 10,
+    top10Pct: Math.round((top10 / races) * 1000) / 10,
+    races,
+  };
 }

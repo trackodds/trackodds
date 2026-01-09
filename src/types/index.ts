@@ -147,6 +147,28 @@ export interface DFSLineup {
 export type DFSPlatform = 'draftkings' | 'fanduel';
 
 // -----------------------------------------------------------------------------
+// RACE RESULTS (for Driver Stats Modal)
+// -----------------------------------------------------------------------------
+
+export interface RaceResult {
+  id: string;
+  driverId: string;
+  raceId: string;
+  raceName: string;
+  trackId: string;
+  trackName: string;
+  trackType: TrackType;
+  date: Date;
+  year: number;
+  startPos: number;
+  finishPos: number;
+  lapsLed: number;
+  lapsCompleted: number;
+  driverRating: number;
+  status: 'running' | 'crash' | 'mechanical' | 'other';
+}
+
+// -----------------------------------------------------------------------------
 // STATISTICS
 // -----------------------------------------------------------------------------
 
@@ -163,6 +185,17 @@ export interface DriverStats {
   driverRating: number;
   lapsCompleted: number;
   dnfs: number;
+}
+
+export interface AggregatedStats {
+  avgFinish: number;
+  avgStart: number;
+  avgRating: number;
+  avgLapsLed: number;
+  winPct: number;
+  top5Pct: number;
+  top10Pct: number;
+  races: number;
 }
 
 export interface PracticeResult {
