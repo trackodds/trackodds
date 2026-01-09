@@ -1,5 +1,6 @@
 import { Header, RaceHero, OddsTable } from '@/components';
 import { getCurrentOddsWithDrivers } from '@/lib/data';
+import { formatImpliedProbability } from '@/lib/utils';
 import { Trophy, TrendingUp, Clock, Zap } from 'lucide-react';
 
 // =============================================================================
@@ -20,8 +21,8 @@ export default async function HomePage() {
     return a.bestOdds - b.bestOdds;
   });
 
-  // Get top 3 favorites for featured section
-  const favorites = sortedOdds.filter(d => d.bestOdds > 0).slice(0, 3);
+  // Get top 3 favorites for featured section (bestOdds !== 0 means has valid odds)
+  const favorites = sortedOdds.filter(d => d.bestOdds !== 0).slice(0, 3);
 
   // Race data
   const upcomingRace = {
@@ -141,7 +142,7 @@ function FavoriteCard({ driver, rank }: { driver: any; rank: number }) {
         <div className="text-right">
           <div className="text-xs text-cream-500 mb-1">Win Probability</div>
           <div className="text-lg font-semibold text-cream-200">
-            {(100 / (driver.bestOdds / 100 + 1)).toFixed(1)}%
+            {formatImpliedProbability(driver.bestOdds)}
           </div>
         </div>
       </div>

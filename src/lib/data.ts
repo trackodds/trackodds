@@ -110,12 +110,13 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
 
   if (oddsError) {
     console.error('Error fetching odds:', oddsError);
+    // Continue with empty odds array rather than undefined
   }
 
   // Build the odds snapshot for each driver
   return drivers.map(driver => {
     const driverOdds: Record<string, number> = {};
-    let bestOdds = 0;
+    let bestOdds = Number.NEGATIVE_INFINITY;
     let bestBook: string | null = null;
 
     // Find odds for this driver
@@ -126,6 +127,8 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
         if (odd.driver_id === driver.id && !seenBooks.has(odd.sportsbook)) {
           seenBooks.add(odd.sportsbook);
           driverOdds[odd.sportsbook] = odd.odds;
+          // For American odds, higher numeric value = better for bettor
+          // (both +500 > +200 and -110 > -200 work correctly)
           if (odd.odds > bestOdds) {
             bestOdds = odd.odds;
             bestBook = odd.sportsbook;
@@ -141,7 +144,8 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
       team: driver.team,
       manufacturer: driver.manufacturer,
       odds: driverOdds,
-      bestOdds,
+      // Use 0 as sentinel for "no odds available"
+      bestOdds: bestOdds === Number.NEGATIVE_INFINITY ? 0 : bestOdds,
       bestBook: (bestBook || 'draftkings') as 'draftkings' | 'fanduel' | 'betmgm' | 'caesars' | 'betrivers' | 'pointsbet',
     };
   });

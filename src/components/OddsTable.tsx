@@ -38,8 +38,8 @@ export function OddsTable({ odds, market = 'Race Winner' }: OddsTableProps) {
     );
   }, [odds, searchQuery]);
 
-  // Count drivers with odds
-  const driversWithOdds = filteredOdds.filter(d => d.bestOdds > 0).length;
+  // Count drivers with odds (0 means no odds, negative odds are valid)
+  const driversWithOdds = filteredOdds.filter(d => d.bestOdds !== 0).length;
 
   return (
     <div className="space-y-4">
@@ -161,7 +161,7 @@ function DesktopRow({
   onHover: () => void;
   onLeave: () => void;
 }) {
-  const hasOdds = driver.bestOdds > 0;
+  const hasOdds = driver.bestOdds !== 0;
 
   return (
     <div
@@ -258,7 +258,7 @@ function MobileCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const hasOdds = driver.bestOdds > 0;
+  const hasOdds = driver.bestOdds !== 0;
 
   return (
     <div className={cn('card overflow-hidden', !hasOdds && 'opacity-50')}>
