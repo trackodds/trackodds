@@ -328,17 +328,23 @@ function normalizeTrackType(dbType: string | null | undefined, trackName?: strin
 // Helper to transform Supabase results to RaceResult format
 function transformResults(data: any[]): RaceResult[] {
   return data.map((result: any) => {
-    const trackName = result.race?.track?.name || 'Unknown Track';
+    // Handle Supabase nested relations - may come back as array or object
+    const race = Array.isArray(result.race) ? result.race[0] : result.race;
+    const track = race?.track ? (Array.isArray(race.track) ? race.track[0] : race.track) : null;
+
+    const trackName = track?.name || 'Unknown Track';
+    const trackType = track?.type || null;
+
     return {
       id: result.id,
       driverId: result.driver_id,
       raceId: result.race_id,
-      raceName: result.race?.name || 'Unknown Race',
-      trackId: result.race?.track?.id || '',
+      raceName: race?.name || 'Unknown Race',
+      trackId: track?.id || '',
       trackName,
-      trackType: normalizeTrackType(result.race?.track?.type, trackName),
-      date: new Date(result.race?.scheduled_date || Date.now()),
-      year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
+      trackType: normalizeTrackType(trackType, trackName),
+      date: new Date(race?.scheduled_date || Date.now()),
+      year: new Date(race?.scheduled_date || Date.now()).getFullYear(),
       startPos: result.start_pos,
       finishPos: result.finish_pos,
       lapsLed: result.laps_led || 0,
