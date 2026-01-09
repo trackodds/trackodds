@@ -157,6 +157,8 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
 // =============================================================================
 
 export async function getDriverResults(driverId: string): Promise<RaceResult[]> {
+  // Fetch all results for this driver (no year filtering)
+  // Using a high limit to ensure we get all historical data
   const { data, error } = await supabase
     .from('results')
     .select(`
@@ -173,7 +175,8 @@ export async function getDriverResults(driverId: string): Promise<RaceResult[]> 
       )
     `)
     .eq('driver_id', driverId)
-    .order('race(scheduled_date)', { ascending: false });
+    .order('race(scheduled_date)', { ascending: false })
+    .limit(500);
 
   if (error) {
     console.error('Error fetching driver results:', error);
@@ -292,6 +295,8 @@ export function calculateAggregatedStats(results: RaceResult[]): AggregatedStats
 // =============================================================================
 
 export async function getAllResults(): Promise<RaceResult[]> {
+  // Fetch all results for all drivers
+  // Using a high limit to ensure we get all historical data across all drivers
   const { data, error } = await supabase
     .from('results')
     .select(`
@@ -307,7 +312,8 @@ export async function getAllResults(): Promise<RaceResult[]> {
         )
       )
     `)
-    .order('race(scheduled_date)', { ascending: false });
+    .order('race(scheduled_date)', { ascending: false })
+    .limit(10000);
 
   if (error) {
     console.error('Error fetching all results:', error);
