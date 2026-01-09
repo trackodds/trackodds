@@ -85,10 +85,16 @@ export function formatCurrency(amount: number): string {
 /**
  * Find the best odds from a set of odds across books
  * @param odds - Object with sportsbook keys and odds values
- * @returns Best odds value
+ * @returns Best odds value, or NaN if no valid odds exist
  */
 export function findBestOdds(odds: Record<string, number | undefined>): number {
   const validOdds = Object.values(odds).filter((o): o is number => o !== undefined);
+
+  // Return NaN if no valid odds exist to prevent -Infinity
+  if (validOdds.length === 0) {
+    return NaN;
+  }
+
   return Math.max(...validOdds);
 }
 
