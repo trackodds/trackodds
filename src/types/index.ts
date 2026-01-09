@@ -153,6 +153,7 @@ export type DFSPlatform = 'draftkings' | 'fanduel';
 export interface DriverStats {
   driverId: string;
   trackId?: string;
+  trackType?: TrackType;
   races: number;
   wins: number;
   top5: number;
@@ -163,6 +164,38 @@ export interface DriverStats {
   driverRating: number;
   lapsCompleted: number;
   dnfs: number;
+}
+
+// Track-type specific performance stats
+export interface TrackTypeStats {
+  trackType: TrackType;
+  races: number;
+  avgFinish: number;
+  avgStart: number;
+  top5: number;
+  top10: number;
+  wins: number;
+  lapsLed: number;
+  driverRating: number;
+  dnfRate: number; // percentage
+}
+
+// Driver profile with comprehensive stats
+export interface DriverProfile extends Driver {
+  currentOdds: number;
+  currentRank: number;
+  startingPosition?: number;
+  stats: {
+    overall: DriverStats;
+    byTrackType: TrackTypeStats[];
+    atCurrentTrack?: DriverStats;
+  };
+  recentForm: {
+    lastRace: { finish: number; laps: number; track: string };
+    last5Avg: number;
+  };
+  practiceResults?: PracticeResult[];
+  qualifyingResult?: QualifyingResult;
 }
 
 export interface PracticeResult {

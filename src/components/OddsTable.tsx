@@ -1,9 +1,18 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, ExternalLink, Star } from 'lucide-react';
 import { OddsSnapshot, Sportsbook } from '@/types';
 import { cn, formatOdds, formatImpliedProbability, abbreviateTeam } from '@/lib/utils';
+
+// Helper: Convert driver name to URL-friendly slug
+function driverToSlug(driverName: string): string {
+  return driverName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 // =============================================================================
 // ODDS TABLE - The heart of TrackOdds
@@ -190,9 +199,12 @@ function DesktopRow({
         
         {/* Name & Team */}
         <div className="min-w-0">
-          <div className="font-semibold text-cream-100 truncate">
+          <Link
+            href={`/drivers/${driverToSlug(driver.driverName)}`}
+            className="font-semibold text-cream-100 truncate hover:text-flame-500 transition-colors block"
+          >
             {driver.driverName}
-          </div>
+          </Link>
           <div className="text-xs text-cream-500 truncate">
             {abbreviateTeam(driver.team)}
           </div>
@@ -282,14 +294,18 @@ function MobileCard({
           </div>
           
           {/* Name & Team */}
-          <div>
+          <Link
+            href={`/drivers/${driverToSlug(driver.driverName)}`}
+            className="hover:text-flame-500 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="font-semibold text-cream-100">
               {driver.driverName}
             </div>
             <div className="text-xs text-cream-500">
               {abbreviateTeam(driver.team)}
             </div>
-          </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
