@@ -1,5 +1,6 @@
 import { Header } from '@/components';
-import { getDriverProfileBySlug, getTrackTypeLabel } from '@/data/mock-driver-profiles';
+import { getDriverProfile } from '@/lib/driver-stats';
+import { getTrackTypeLabel } from '@/data/mock-driver-profiles';
 import { formatOdds } from '@/lib/utils';
 import { ArrowLeft, TrendingUp, Award, Target, Zap, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -15,8 +16,9 @@ interface PageProps {
   params: { slug: string };
 }
 
-export default function DriverPage({ params }: PageProps) {
-  const driver = getDriverProfileBySlug(params.slug);
+export default async function DriverPage({ params }: PageProps) {
+  // Fetch driver data from Supabase
+  const driver = await getDriverProfile(params.slug, 'daytona-500-2026');
 
   if (!driver) {
     notFound();

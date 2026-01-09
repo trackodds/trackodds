@@ -2,25 +2,49 @@ import { supabase } from './supabase';
 import { TrackType, TrackTypeStats, DriverProfile, DriverStats } from '@/types';
 
 // =============================================================================
+// TRACK TYPE MAPPING
+// =============================================================================
+
+/**
+ * Map Title Case track types from DB to our TrackType enum
+ */
+function mapTrackType(dbType: string): TrackType | null {
+  const mapping: Record<string, TrackType> = {
+    'Superspeedway': 'superspeedway',
+    'Intermediate': 'intermediate',
+    'Short Track': 'short',
+    'Road Course': 'road',
+  };
+  return mapping[dbType] || null;
+}
+
+// =============================================================================
 // FETCH DRIVER RACE RESULTS
 // =============================================================================
 
 /**
- * Fetch all race results for a driver
- * Assumes table: race_results or results
- * Fields: driver_id, race_id, start_position, finish_position,
- *         avg_running_position, fast_laps, laps_led, driver_rating, laps_completed
+ * Fetch all race results for a driver (2024-2025 seasons)
+ * Table: results
+ * Fields: driver_id, race_id, start_pos, finish_pos, avg_pos,
+ *         fastest_laps, laps_led, driver_rating, status, quality_passes
  */
 export async function getDriverRaceResults(driverId: string) {
   const { data, error } = await supabase
-    .from('race_results') // Update this table name if different
+    .from('results')
     .select(`
-      *,
-      race:races(
+      start_pos,
+      finish_pos,
+      avg_pos,
+      driver_rating,
+      laps_led,
+      fastest_laps,
+      quality_passes,
+      status,
+      races!inner(
         id,
         name,
         scheduled_date,
-        track:tracks(
+        tracks!inner(
           id,
           name,
           type,
@@ -29,8 +53,8 @@ export async function getDriverRaceResults(driverId: string) {
       )
     `)
     .eq('driver_id', driverId)
-    .gte('race.scheduled_date', '2023-01-01') // Last 3 seasons
-    .order('race.scheduled_date', { ascending: false });
+    .gte('races.scheduled_date', '2024-01-01')
+    .order('races.scheduled_date', { ascending: false });
 
   if (error) {
     console.error('Error fetching driver race results:', error);
@@ -51,10 +75,11 @@ export function computeTrackTypeStats(
   raceResults: any[],
   trackType: TrackType
 ): TrackTypeStats {
-  // Filter results by track type
-  const filteredResults = raceResults.filter(
-    (result) => result.race?.track?.type === trackType
-  );
+  // Filter results by track type (map from DB Title Case to our enum)
+  const filteredResults = raceResults.filter((result) => {
+    const dbType = result.races?.tracks?.type;
+    return mapTrackType(dbType) === trackType;
+  });
 
   if (filteredResults.length === 0) {
     return {
@@ -72,15 +97,19 @@ export function computeTrackTypeStats(
   }
 
   const totalRaces = filteredResults.length;
-  const totalFinish = filteredResults.reduce((sum, r) => sum + (r.finish_position || 0), 0);
-  const totalStart = filteredResults.reduce((sum, r) => sum + (r.start_position || 0), 0);
+  const totalFinish = filteredResults.reduce((sum, r) => sum + (r.finish_pos || 0), 0);
+  const totalStart = filteredResults.reduce((sum, r) => sum + (r.start_pos || 0), 0);
   const totalLapsLed = filteredResults.reduce((sum, r) => sum + (r.laps_led || 0), 0);
   const totalRating = filteredResults.reduce((sum, r) => sum + (r.driver_rating || 0), 0);
 
-  const top5 = filteredResults.filter((r) => r.finish_position <= 5).length;
-  const top10 = filteredResults.filter((r) => r.finish_position <= 10).length;
-  const wins = filteredResults.filter((r) => r.finish_position === 1).length;
-  const dnfs = filteredResults.filter((r) => r.finish_position > 35 || r.status === 'DNF').length;
+  const top5 = filteredResults.filter((r) => r.finish_pos <= 5).length;
+  const top10 = filteredResults.filter((r) => r.finish_pos <= 10).length;
+  const wins = filteredResults.filter((r) => r.finish_pos === 1).length;
+
+  // DNFs: status is "Accident" or finish_pos > 35
+  const dnfs = filteredResults.filter(
+    (r) => r.status === 'Accident' || r.finish_pos > 35
+  ).length;
 
   return {
     trackType,
@@ -121,24 +150,27 @@ export function computeOverallStats(raceResults: any[], driverId: string): Drive
   }
 
   const totalRaces = raceResults.length;
-  const totalFinish = raceResults.reduce((sum, r) => sum + (r.finish_position || 0), 0);
-  const totalStart = raceResults.reduce((sum, r) => sum + (r.start_position || 0), 0);
+  const totalFinish = raceResults.reduce((sum, r) => sum + (r.finish_pos || 0), 0);
+  const totalStart = raceResults.reduce((sum, r) => sum + (r.start_pos || 0), 0);
   const totalLapsLed = raceResults.reduce((sum, r) => sum + (r.laps_led || 0), 0);
   const totalRating = raceResults.reduce((sum, r) => sum + (r.driver_rating || 0), 0);
-  const totalLapsCompleted = raceResults.reduce((sum, r) => sum + (r.laps_completed || 0), 0);
+
+  // Note: laps_completed not available as int field (status is string)
+  // We can estimate: assume ~400 laps per race if status is "Running"
+  const estimatedLapsCompleted = raceResults.filter((r) => r.status === 'Running').length * 400;
 
   return {
     driverId,
     races: totalRaces,
-    wins: raceResults.filter((r) => r.finish_position === 1).length,
-    top5: raceResults.filter((r) => r.finish_position <= 5).length,
-    top10: raceResults.filter((r) => r.finish_position <= 10).length,
+    wins: raceResults.filter((r) => r.finish_pos === 1).length,
+    top5: raceResults.filter((r) => r.finish_pos <= 5).length,
+    top10: raceResults.filter((r) => r.finish_pos <= 10).length,
     avgFinish: totalFinish / totalRaces,
     avgStart: totalStart / totalRaces,
     lapsLed: totalLapsLed,
     driverRating: totalRating / totalRaces,
-    lapsCompleted: totalLapsCompleted,
-    dnfs: raceResults.filter((r) => r.finish_position > 35 || r.status === 'DNF').length,
+    lapsCompleted: estimatedLapsCompleted, // Estimated
+    dnfs: raceResults.filter((r) => r.status === 'Accident' || r.finish_pos > 35).length,
   };
 }
 
@@ -154,13 +186,15 @@ export function computeAtTrackStats(
   trackId: string,
   driverId: string
 ): DriverStats | undefined {
-  const trackResults = raceResults.filter((r) => r.race?.track?.id === trackId);
+  const trackResults = raceResults.filter((r) => r.races?.tracks?.id === trackId);
 
   if (trackResults.length === 0) {
     return undefined;
   }
 
-  return computeOverallStats(trackResults, driverId);
+  const stats = computeOverallStats(trackResults, driverId);
+  stats.trackId = trackId;
+  return stats;
 }
 
 // =============================================================================
@@ -220,7 +254,7 @@ export async function getDriverProfile(
   const lastRace = raceResults[0];
   const last5Avg =
     recentRaces.length > 0
-      ? recentRaces.reduce((sum, r) => sum + (r.finish_position || 0), 0) / recentRaces.length
+      ? recentRaces.reduce((sum, r) => sum + (r.finish_pos || 0), 0) / recentRaces.length
       : 0;
 
   // Get current rank (would need to compute from all drivers' odds)
@@ -245,9 +279,9 @@ export async function getDriverProfile(
     },
     recentForm: {
       lastRace: {
-        finish: lastRace?.finish_position || 0,
-        laps: lastRace?.laps_completed || 0,
-        track: lastRace?.race?.track?.name || '',
+        finish: lastRace?.finish_pos || 0,
+        laps: lastRace?.status === 'Running' ? 400 : 0, // Estimate
+        track: lastRace?.races?.name || '',
       },
       last5Avg,
     },
