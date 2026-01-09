@@ -207,8 +207,8 @@ export function StatsGrid({
 
   return (
     <div className="space-y-4">
-      {/* Filter Bar */}
-      <div className="card p-4 sticky top-0 z-30 bg-void-800/95 backdrop-blur-sm">
+      {/* Filter Bar - No overflow-hidden to allow dropdowns */}
+      <div className="p-4 sticky top-0 z-30 bg-void-800/95 backdrop-blur-sm border border-void-700/50 rounded-2xl">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] max-w-xs">
