@@ -160,6 +160,7 @@ export async function getDriverResults(driverId: string, driverName?: string): P
   // Fetch all results for this driver (no year filtering)
   // Using a high limit to ensure we get all historical data
   // Using explicit foreign key notation to ensure proper joins
+  // Note: Sorting is done client-side to avoid issues with nested field ordering
   const { data, error } = await supabase
     .from('results')
     .select(`
@@ -177,7 +178,6 @@ export async function getDriverResults(driverId: string, driverName?: string): P
       )
     `)
     .eq('driver_id', driverId)
-    .order('race(scheduled_date)', { ascending: false })
     .limit(500);
 
   if (error) {
@@ -208,7 +208,6 @@ export async function getDriverResults(driverId: string, driverName?: string): P
           )
         )
       `)
-      .order('race(scheduled_date)', { ascending: false })
       .limit(500);
 
     if (!nameError && nameData) {
@@ -455,6 +454,7 @@ export async function getAllResults(): Promise<RaceResult[]> {
   // Fetch all results for all drivers
   // Using a high limit to ensure we get all historical data across all drivers
   // Using explicit foreign key notation to ensure proper joins
+  // Note: Sorting is done client-side to avoid issues with nested field ordering
   const { data, error } = await supabase
     .from('results')
     .select(`
@@ -471,7 +471,6 @@ export async function getAllResults(): Promise<RaceResult[]> {
         )
       )
     `)
-    .order('race(scheduled_date)', { ascending: false })
     .limit(10000);
 
   if (error) {
