@@ -159,15 +159,17 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
 export async function getDriverResults(driverId: string, driverName?: string): Promise<RaceResult[]> {
   // Fetch all results for this driver (no year filtering)
   // Using a high limit to ensure we get all historical data
+  // Using explicit foreign key notation to ensure proper joins
   const { data, error } = await supabase
     .from('results')
     .select(`
       *,
-      race:races(
+      race:races!race_id(
         id,
         name,
         scheduled_date,
-        track:tracks(
+        track_id,
+        track:tracks!track_id(
           id,
           name,
           type
@@ -193,12 +195,13 @@ export async function getDriverResults(driverId: string, driverName?: string): P
       .from('results')
       .select(`
         *,
-        driver:drivers!inner(name),
-        race:races(
+        driver:drivers!driver_id(name),
+        race:races!race_id(
           id,
           name,
           scheduled_date,
-          track:tracks(
+          track_id,
+          track:tracks!track_id(
             id,
             name,
             type
@@ -451,15 +454,17 @@ export function calculateAggregatedStats(results: RaceResult[]): AggregatedStats
 export async function getAllResults(): Promise<RaceResult[]> {
   // Fetch all results for all drivers
   // Using a high limit to ensure we get all historical data across all drivers
+  // Using explicit foreign key notation to ensure proper joins
   const { data, error } = await supabase
     .from('results')
     .select(`
       *,
-      race:races(
+      race:races!race_id(
         id,
         name,
         scheduled_date,
-        track:tracks(
+        track_id,
+        track:tracks!track_id(
           id,
           name,
           type
