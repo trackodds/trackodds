@@ -29,8 +29,9 @@ export default async function DriverPage({ params }: PageProps) {
   }
 
   // Fetch all data in parallel
+  // Pass driver name to getDriverResults for fallback matching if ID doesn't match
   const [results, tracks, years] = await Promise.all([
-    getDriverResults(driverId),
+    getDriverResults(driverId, driver.name),
     getTracks(),
     getResultYears(),
   ]);

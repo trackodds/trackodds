@@ -156,7 +156,7 @@ export async function getCurrentOddsWithDrivers(raceId: string) {
 // FETCH DRIVER RACE RESULTS
 // =============================================================================
 
-export async function getDriverResults(driverId: string): Promise<RaceResult[]> {
+export async function getDriverResults(driverId: string, driverName?: string): Promise<RaceResult[]> {
   // Fetch all results for this driver (no year filtering)
   // Using a high limit to ensure we get all historical data
   const { data, error } = await supabase
@@ -183,9 +183,51 @@ export async function getDriverResults(driverId: string): Promise<RaceResult[]> 
     return [];
   }
 
+  // If no results by ID and we have a driver name, try matching by name
+  // This handles cases where driver_id is inconsistent in the results table
+  if ((!data || data.length === 0) && driverName) {
+    // Normalize name for fuzzy matching (remove periods, handle Jr/Sr variations)
+    const normalizedName = driverName.replace(/\./g, '').toLowerCase();
+
+    const { data: nameData, error: nameError } = await supabase
+      .from('results')
+      .select(`
+        *,
+        driver:drivers!inner(name),
+        race:races(
+          id,
+          name,
+          scheduled_date,
+          track:tracks(
+            id,
+            name,
+            type
+          )
+        )
+      `)
+      .order('race(scheduled_date)', { ascending: false })
+      .limit(500);
+
+    if (!nameError && nameData) {
+      // Filter by fuzzy name match
+      const matchedResults = nameData.filter((r: any) => {
+        const resultDriverName = r.driver?.name?.replace(/\./g, '').toLowerCase() || '';
+        return resultDriverName.includes(normalizedName) || normalizedName.includes(resultDriverName);
+      });
+
+      if (matchedResults.length > 0) {
+        return transformResults(matchedResults);
+      }
+    }
+  }
+
   if (!data) return [];
 
-  // Transform to RaceResult format
+  return transformResults(data);
+}
+
+// Helper to transform Supabase results to RaceResult format
+function transformResults(data: any[]): RaceResult[] {
   return data.map((result: any) => ({
     id: result.id,
     driverId: result.driver_id,
