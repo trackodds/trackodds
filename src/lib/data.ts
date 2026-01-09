@@ -227,38 +227,64 @@ export async function getDriverResults(driverId: string, driverName?: string): P
 }
 
 // Known track classifications by name (fallback when type field is missing/wrong)
+// Includes common aliases and alternate names
 const TRACK_TYPE_BY_NAME: Record<string, TrackType> = {
   // Superspeedways
   'daytona': 'superspeedway',
   'talladega': 'superspeedway',
-  // Short tracks
+  // Short tracks (< 1 mile)
   'bristol': 'short',
   'martinsville': 'short',
   'richmond': 'short',
   'north wilkesboro': 'short',
   'new hampshire': 'short',
+  'loudon': 'short', // New Hampshire alias
+  'nhms': 'short', // New Hampshire abbreviation
   'phoenix': 'short',
+  'ism raceway': 'short', // Old Phoenix name
+  'pir': 'short', // Phoenix abbreviation
   'iowa': 'short',
+  'dover': 'short', // Dover is 1 mile, often classified as short
+  'monster mile': 'short', // Dover nickname
   // Road courses
   'sonoma': 'road',
+  'sears point': 'road', // Old Sonoma name
   'watkins glen': 'road',
+  'the glen': 'road', // Watkins Glen nickname
   'road america': 'road',
+  'elkhart': 'road', // Road America location
   'cota': 'road',
   'circuit of the americas': 'road',
+  'austin': 'road', // COTA location
   'chicago street': 'road',
+  'grant park': 'road', // Chicago street course
   'indianapolis road': 'road',
+  'indy road': 'road',
+  'portland': 'road',
   // Intermediates (explicit)
   'atlanta': 'intermediate',
   'charlotte': 'intermediate',
+  'coca-cola': 'intermediate', // Charlotte race name
   'las vegas': 'intermediate',
+  'lvms': 'intermediate',
   'texas': 'intermediate',
+  'tms': 'intermediate',
   'kansas': 'intermediate',
   'michigan': 'intermediate',
   'homestead': 'intermediate',
+  'homestead-miami': 'intermediate',
   'darlington': 'intermediate',
   'nashville': 'intermediate',
+  'nashville superspeedway': 'intermediate',
   'pocono': 'intermediate',
   'gateway': 'intermediate',
+  'world wide technology': 'intermediate', // Gateway full name
+  'wwtr': 'intermediate', // Gateway abbreviation
+  'auto club': 'intermediate', // Fontana
+  'fontana': 'intermediate',
+  'california': 'intermediate',
+  'indianapolis motor': 'intermediate', // Indy oval
+  'brickyard': 'intermediate', // Indy nickname
 };
 
 // Helper to normalize track type from database values to TrackType
@@ -282,9 +308,10 @@ function normalizeTrackType(dbType: string | null | undefined, trackName?: strin
     if (normalized.includes('dirt')) {
       return 'dirt';
     }
+    // Type field exists but didn't match any pattern - fall through to name check
   }
 
-  // Fallback: try to determine type from track name
+  // Fallback: try to determine type from track name (always check, not just when dbType is empty)
   if (trackName) {
     const normalizedName = trackName.toLowerCase();
     for (const [key, type] of Object.entries(TRACK_TYPE_BY_NAME)) {
