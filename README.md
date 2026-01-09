@@ -22,11 +22,22 @@ cd trackodds
 # Install dependencies
 npm install
 
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local and add your Supabase credentials
+
 # Run development server
 npm run dev
 
 # Open http://localhost:3000
 ```
+
+### Environment Setup
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Copy `.env.local.example` to `.env.local`
+3. Add your Supabase URL and anon key from your project settings
+4. The app will display a clear error if environment variables are missing
 
 ## 📁 Project Structure
 
