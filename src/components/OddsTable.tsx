@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, ExternalLink, Star } from 'lucide-react';
-import { OddsSnapshot, Sportsbook, TrackType } from '@/types';
+import Link from 'next/link';
+import { Search, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { OddsSnapshot, Sportsbook } from '@/types';
 import { cn, formatOdds, formatImpliedProbability, abbreviateTeam } from '@/lib/utils';
-import { DriverStatsDrawer } from './DriverStatsDrawer';
 
 // =============================================================================
 // ODDS TABLE - The heart of TrackOdds
@@ -13,8 +13,6 @@ import { DriverStatsDrawer } from './DriverStatsDrawer';
 interface OddsTableProps {
   odds: OddsSnapshot[];
   market?: string;
-  currentTrackType?: TrackType;
-  currentTrackId?: string;
 }
 
 const SPORTSBOOKS: { id: Sportsbook; name: string; shortName: string; color: string; bgColor: string }[] = [
@@ -25,24 +23,10 @@ const SPORTSBOOKS: { id: Sportsbook; name: string; shortName: string; color: str
   { id: 'betrivers', name: 'BetRivers', shortName: 'BR', color: '#1a73e8', bgColor: 'bg-[#1a73e8]/10' },
 ];
 
-export function OddsTable({
-  odds,
-  market = 'Race Winner',
-  currentTrackType = 'superspeedway',
-  currentTrackId = 'daytona',
-}: OddsTableProps) {
+export function OddsTable({ odds, market = 'Race Winner' }: OddsTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-
-  // Driver stats drawer state
-  const [selectedDriver, setSelectedDriver] = useState<OddsSnapshot | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const handleDriverClick = (driver: OddsSnapshot) => {
-    setSelectedDriver(driver);
-    setDrawerOpen(true);
-  };
 
   const filteredOdds = useMemo(() => {
     if (!searchQuery) return odds;
@@ -102,7 +86,7 @@ export function OddsTable({
                   key={book.id}
                   className="text-center"
                 >
-                  <span 
+                  <span
                     className="inline-flex items-center justify-center w-10 h-6 rounded-md text-xs font-bold"
                     style={{ backgroundColor: `${book.color}20`, color: book.color }}
                   >
@@ -126,7 +110,6 @@ export function OddsTable({
                 isHovered={hoveredRow === driver.driverId}
                 onHover={() => setHoveredRow(driver.driverId)}
                 onLeave={() => setHoveredRow(null)}
-                onDriverClick={() => handleDriverClick(driver)}
               />
             ))}
           </div>
@@ -142,7 +125,6 @@ export function OddsTable({
             index={index}
             expanded={expandedDriver === driver.driverId}
             onToggle={() => setExpandedDriver(expandedDriver === driver.driverId ? null : driver.driverId)}
-            onDriverClick={() => handleDriverClick(driver)}
           />
         ))}
       </div>
@@ -159,20 +141,6 @@ export function OddsTable({
           </button>
         </div>
       )}
-
-      {/* Driver Stats Drawer */}
-      {selectedDriver && (
-        <DriverStatsDrawer
-          isOpen={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          driverId={selectedDriver.driverId}
-          driverName={selectedDriver.driverName}
-          driverNumber={selectedDriver.driverNumber}
-          team={selectedDriver.team}
-          currentTrackType={currentTrackType}
-          currentTrackId={currentTrackId}
-        />
-      )}
     </div>
   );
 }
@@ -187,14 +155,12 @@ function DesktopRow({
   isHovered,
   onHover,
   onLeave,
-  onDriverClick,
 }: {
   driver: OddsSnapshot;
   index: number;
   isHovered: boolean;
   onHover: () => void;
   onLeave: () => void;
-  onDriverClick: () => void;
 }) {
   const hasOdds = driver.bestOdds !== 0;
 
@@ -223,9 +189,9 @@ function DesktopRow({
           {driver.driverNumber}
         </div>
 
-        {/* Name & Team - Clickable */}
-        <button
-          onClick={onDriverClick}
+        {/* Name & Team - Link to driver page */}
+        <Link
+          href={`/driver/${driver.driverId}`}
           className="min-w-0 text-left group"
         >
           <div className="font-semibold text-cream-100 truncate group-hover:text-flame-400 transition-colors">
@@ -234,7 +200,7 @@ function DesktopRow({
           <div className="text-xs text-cream-500 truncate">
             {abbreviateTeam(driver.team)}
           </div>
-        </button>
+        </Link>
       </div>
 
       {/* Odds grid */}
@@ -290,13 +256,11 @@ function MobileCard({
   index,
   expanded,
   onToggle,
-  onDriverClick,
 }: {
   driver: OddsSnapshot;
   index: number;
   expanded: boolean;
   onToggle: () => void;
-  onDriverClick: () => void;
 }) {
   const hasOdds = driver.bestOdds !== 0;
 
@@ -318,9 +282,9 @@ function MobileCard({
             {driver.driverNumber}
           </div>
 
-          {/* Name & Team - Clickable to open drawer */}
-          <button
-            onClick={onDriverClick}
+          {/* Name & Team - Link to driver page */}
+          <Link
+            href={`/driver/${driver.driverId}`}
             className="text-left"
           >
             <div className="font-semibold text-cream-100 hover:text-flame-400 transition-colors">
@@ -329,7 +293,7 @@ function MobileCard({
             <div className="text-xs text-cream-500">
               {abbreviateTeam(driver.team)}
             </div>
-          </button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
@@ -369,8 +333,8 @@ function MobileCard({
                   key={book.id}
                   className={cn(
                     'text-center py-2.5 px-2 rounded-xl transition-all',
-                    isBest 
-                      ? 'bg-mint-500/10 ring-1 ring-mint-500/30' 
+                    isBest
+                      ? 'bg-mint-500/10 ring-1 ring-mint-500/30'
                       : 'bg-void-700/50'
                   )}
                 >
