@@ -286,3 +286,89 @@ export function calculateAggregatedStats(results: RaceResult[]): AggregatedStats
     races,
   };
 }
+
+// =============================================================================
+// FETCH ALL RESULTS FOR STATS PAGE
+// =============================================================================
+
+export async function getAllResults(): Promise<RaceResult[]> {
+  const { data, error } = await supabase
+    .from('results')
+    .select(`
+      *,
+      race:races(
+        id,
+        name,
+        scheduled_date,
+        track:tracks(
+          id,
+          name,
+          type
+        )
+      )
+    `)
+    .order('race(scheduled_date)', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all results:', error);
+    return [];
+  }
+
+  if (!data) return [];
+
+  // Transform to RaceResult format
+  return data.map((result: any) => ({
+    id: result.id,
+    driverId: result.driver_id,
+    raceId: result.race_id,
+    raceName: result.race?.name || 'Unknown Race',
+    trackId: result.race?.track?.id || '',
+    trackName: result.race?.track?.name || 'Unknown Track',
+    trackType: (result.race?.track?.type || 'intermediate') as TrackType,
+    date: new Date(result.race?.scheduled_date || Date.now()),
+    year: new Date(result.race?.scheduled_date || Date.now()).getFullYear(),
+    startPos: result.start_pos,
+    finishPos: result.finish_pos,
+    lapsLed: result.laps_led || 0,
+    lapsCompleted: result.laps_completed || 0,
+    driverRating: result.driver_rating || 0,
+    status: result.status || 'running',
+  }));
+}
+
+// =============================================================================
+// GET UPCOMING RACE TRACK INFO
+// =============================================================================
+
+export async function getUpcomingRaceTrack(): Promise<{ trackId: string; trackType: TrackType; trackName: string } | null> {
+  const { data, error } = await supabase
+    .from('races')
+    .select(`
+      track:tracks(
+        id,
+        name,
+        type
+      )
+    `)
+    .gte('scheduled_date', new Date().toISOString())
+    .order('scheduled_date')
+    .limit(1)
+    .single();
+
+  if (error || !data?.track) {
+    return { trackId: 'daytona', trackType: 'superspeedway', trackName: 'Daytona International Speedway' };
+  }
+
+  // Handle track as potentially an array or single object
+  const track = Array.isArray(data.track) ? data.track[0] : data.track;
+
+  if (!track) {
+    return { trackId: 'daytona', trackType: 'superspeedway', trackName: 'Daytona International Speedway' };
+  }
+
+  return {
+    trackId: track.id,
+    trackType: track.type as TrackType,
+    trackName: track.name,
+  };
+}
