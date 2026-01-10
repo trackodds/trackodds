@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import { Header } from '@/components';
-import { getDriverResults, getTracks, getResultYears, calculateAggregatedStats } from '@/lib/data';
+import { getDriverResults, getTracks, getResultYears } from '@/lib/data';
 import { supabase } from '@/lib/supabase';
-import { DriverStatsContent } from './DriverStatsContent';
+import { DriverDashboard } from './DriverDashboard';
 
 // =============================================================================
-// DRIVER STATS PAGE
+// DRIVER ANALYTICS PAGE - High-octane dashboard
 // =============================================================================
 
 export const dynamic = 'force-dynamic';
@@ -40,33 +40,16 @@ export default async function DriverPage({ params }: PageProps) {
     <div className="min-h-screen bg-void-900">
       <Header />
 
-      {/* Hero Section */}
-      <div className="relative pt-20 pb-8 border-b border-void-700/50">
-        <div className="absolute inset-0 bg-gradient-to-b from-flame-500/5 to-transparent" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            {/* Driver Number */}
-            <div className="driver-number-featured text-3xl w-20 h-20">
-              {driver.number}
-            </div>
-
-            {/* Driver Info */}
-            <div>
-              <h1 className="font-display text-4xl font-bold text-cream-50">
-                {driver.name}
-              </h1>
-              <p className="text-lg text-cream-400 mt-1">
-                {driver.team} • {driver.manufacturer}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <DriverStatsContent
-          driverId={driverId}
+      {/* Main Content - Full width dashboard */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 pt-20">
+        <DriverDashboard
+          driver={{
+            id: driver.id,
+            name: driver.name,
+            number: driver.number,
+            team: driver.team,
+            manufacturer: driver.manufacturer,
+          }}
           results={results}
           tracks={tracks}
           years={years}
