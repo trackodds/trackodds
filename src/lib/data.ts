@@ -331,7 +331,7 @@ function normalizeTrackType(dbType: string | null | undefined, trackName?: strin
 
 // Helper to transform Supabase results to RaceResult format
 function transformResults(data: any[]): RaceResult[] {
-  return data.map((result: any) => {
+  const results = data.map((result: any) => {
     // Handle Supabase nested relations - may come back as array or object
     const race = Array.isArray(result.race) ? result.race[0] : result.race;
     const track = race?.track ? (Array.isArray(race.track) ? race.track[0] : race.track) : null;
@@ -357,6 +357,21 @@ function transformResults(data: any[]): RaceResult[] {
       status: result.status || 'running',
     };
   });
+
+  // De-duplicate by scheduled_date (only one race per date per driver)
+  // Keep the first occurrence (which should be the most recent record due to ordering)
+  const seen = new Map<string, RaceResult>();
+  for (const result of results) {
+    // Create unique key: driverId + date (ISO string for date only)
+    const dateKey = result.date.toISOString().split('T')[0];
+    const key = `${result.driverId}-${dateKey}`;
+
+    if (!seen.has(key)) {
+      seen.set(key, result);
+    }
+  }
+
+  return Array.from(seen.values());
 }
 
 // =============================================================================
@@ -386,23 +401,31 @@ export async function getTracks() {
 // =============================================================================
 
 export async function getResultYears(): Promise<number[]> {
+  // Query races to get all unique years
+  // Using high limit to ensure we capture all seasons (2023, 2024, 2025+)
   const { data, error } = await supabase
     .from('races')
     .select('scheduled_date')
-    .order('scheduled_date', { ascending: false });
+    .order('scheduled_date', { ascending: false })
+    .limit(1000);
 
   if (error) {
     console.error('Error fetching years:', error);
-    return [2025, 2024];
+    return [2025, 2024, 2023];
   }
 
-  if (!data) return [2025, 2024];
+  if (!data) return [2025, 2024, 2023];
 
   const years = new Set<number>();
   for (const race of data) {
     if (race.scheduled_date) {
       years.add(new Date(race.scheduled_date).getFullYear());
     }
+  }
+
+  // Ensure we return at least the known seasons if set is empty
+  if (years.size === 0) {
+    return [2025, 2024, 2023];
   }
 
   return Array.from(years).sort((a, b) => b - a);
